@@ -285,7 +285,7 @@ if(CMake_RUN_IWYU)
     message(FATAL_ERROR "CMake_RUN_IWYU is ON but include-what-you-use is not found!")
   endif()
   set(CMAKE_CXX_INCLUDE_WHAT_YOU_USE
-    "${IWYU_COMMAND};-Xiwyu;--mapping_file=${CMake_SOURCE_DIR}/Utilities/IWYU/mapping.imp;-w")
+    "${IWYU_COMMAND};-Xiwyu;--mapping_file=${CMake_SOURCE_DIR}/Utilities/IWYU/mapping.imp;-w;-DCMAKE_IWYU")
 endif()
 
 
@@ -546,7 +546,7 @@ macro (CMAKE_BUILD_UTILITIES)
   #---------------------------------------------------------------------
   # Build libuv library.
   if(CMAKE_USE_SYSTEM_LIBUV)
-    find_package(LibUV 1.0.0)
+    find_package(LibUV 1.10.0)
     if(NOT LIBUV_FOUND)
       message(FATAL_ERROR
         "CMAKE_USE_SYSTEM_LIBUV is ON but a libuv is not found!")

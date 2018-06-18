@@ -27,7 +27,7 @@
 #include "cmake.h"
 
 #if defined(CMAKE_BUILD_WITH_CMAKE)
-#include "cmSourceGroup.h"
+#  include "cmSourceGroup.h"
 #endif
 
 class cmCommand;
@@ -102,7 +102,8 @@ public:
    */
   int TryCompile(const std::string& srcdir, const std::string& bindir,
                  const std::string& projectName, const std::string& targetName,
-                 bool fast, const std::vector<std::string>* cmakeArgs,
+                 bool fast, int jobs,
+                 const std::vector<std::string>* cmakeArgs,
                  std::string& output);
 
   bool GetIsSourceFileTryCompile() const;
@@ -168,7 +169,9 @@ public:
    */
   void AddDefineFlag(std::string const& definition);
   void RemoveDefineFlag(std::string const& definition);
+  void AddCompileDefinition(std::string const& definition);
   void AddCompileOption(std::string const& option);
+  void AddLinkOption(std::string const& option);
 
   /** Create a new imported target with the name and type given.  */
   cmTarget* AddImportedTarget(const std::string& name,
@@ -280,11 +283,12 @@ public:
 
   //@{
   /**
-     * Set, Push, Pop policy values for CMake.
-     */
+   * Set, Push, Pop policy values for CMake.
+   */
   bool SetPolicy(cmPolicies::PolicyID id, cmPolicies::PolicyStatus status);
   bool SetPolicy(const char* id, cmPolicies::PolicyStatus status);
-  cmPolicies::PolicyStatus GetPolicyStatus(cmPolicies::PolicyID id) const;
+  cmPolicies::PolicyStatus GetPolicyStatus(cmPolicies::PolicyID id,
+                                           bool parent_scope = false) const;
   bool SetPolicyVersion(std::string const& version_min,
                         std::string const& version_max);
   void RecordPolicies(cmPolicies::PolicyMap& pm);
@@ -563,12 +567,11 @@ public:
    * entry in the this->Definitions map.  Also \@var\@ is
    * expanded to match autoconf style expansions.
    */
-  const char* ExpandVariablesInString(std::string& source) const;
-  const char* ExpandVariablesInString(std::string& source, bool escapeQuotes,
-                                      bool noEscapes, bool atOnly = false,
-                                      const char* filename = nullptr,
-                                      long line = -1, bool removeEmpty = false,
-                                      bool replaceAt = false) const;
+  const std::string& ExpandVariablesInString(std::string& source) const;
+  const std::string& ExpandVariablesInString(
+    std::string& source, bool escapeQuotes, bool noEscapes,
+    bool atOnly = false, const char* filename = nullptr, long line = -1,
+    bool removeEmpty = false, bool replaceAt = false) const;
 
   /**
    * Remove any remaining variables in the string. Anything with ${var} or
@@ -722,6 +725,7 @@ public:
     ~FunctionPushPop();
 
     void Quiet() { this->ReportError = false; }
+
   private:
     cmMakefile* Makefile;
     bool ReportError;
@@ -735,6 +739,7 @@ public:
     ~MacroPushPop();
 
     void Quiet() { this->ReportError = false; }
+
   private:
     cmMakefile* Makefile;
     bool ReportError;
@@ -765,6 +770,7 @@ public:
       this->Makefile->PushScope();
     }
     ~ScopePushPop() { this->Makefile->PopScope(); }
+
   private:
     cmMakefile* Makefile;
   };
@@ -783,6 +789,8 @@ public:
   cmBacktraceRange GetCompileOptionsBacktraces() const;
   cmStringRange GetCompileDefinitionsEntries() const;
   cmBacktraceRange GetCompileDefinitionsBacktraces() const;
+  cmStringRange GetLinkOptionsEntries() const;
+  cmBacktraceRange GetLinkOptionsBacktraces() const;
 
   std::set<std::string> const& GetSystemIncludeDirectories() const
   {
@@ -884,9 +892,6 @@ protected:
   std::string DefineFlags;
 
   // Track the value of the computed DEFINITIONS property.
-  void AddDefineFlag(std::string const& flag, std::string&);
-  void RemoveDefineFlag(std::string const& flag, std::string::size_type,
-                        std::string&);
   std::string DefineFlagsOrig;
 
 #if defined(CMAKE_BUILD_WITH_CMAKE)
@@ -991,7 +996,7 @@ private:
                             bool& needC99, bool& needC11) const;
   void CheckNeededCxxLanguage(const std::string& feature, bool& needCxx98,
                               bool& needCxx11, bool& needCxx14,
-                              bool& needCxx17) const;
+                              bool& needCxx17, bool& needCxx20) const;
 
   bool HaveCStandardAvailable(cmTarget const* target,
                               const std::string& feature) const;

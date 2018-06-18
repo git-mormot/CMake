@@ -103,6 +103,9 @@ bool cmExportInstallFileGenerator::GenerateMainFile(std::ostream& os)
     this->PopulateInterfaceProperty("INTERFACE_COMPILE_FEATURES", gt,
                                     cmGeneratorExpression::InstallInterface,
                                     properties, missingTargets);
+    this->PopulateInterfaceProperty("INTERFACE_LINK_OPTIONS", gt,
+                                    cmGeneratorExpression::InstallInterface,
+                                    properties, missingTargets);
 
     std::string errorMessage;
     if (!this->PopulateExportProperties(gt, properties, errorMessage)) {
@@ -347,7 +350,7 @@ void cmExportInstallFileGenerator::GenerateImportTargetsConfig(
                                    cmGeneratorExpression::InstallInterface,
                                    gtgt, properties, missingTargets);
 
-      // TOOD: PUBLIC_HEADER_LOCATION
+      // TODO: PUBLIC_HEADER_LOCATION
       // This should wait until the build feature propagation stuff
       // is done.  Then this can be a propagated include directory.
       // this->GenerateImportProperty(config, te->HeaderGenerator,

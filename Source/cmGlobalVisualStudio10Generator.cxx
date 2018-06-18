@@ -231,8 +231,65 @@ bool cmGlobalVisualStudio10Generator::SetGeneratorToolset(
     }
   }
 
+  if (!this->GeneratorToolsetVersion.empty() &&
+      this->GeneratorToolsetVersion != "Test Toolset Version") {
+    // If a specific minor version of the toolset was requested, verify that it
+    // is compatible to the major version and that is exists on disk.
+    // If not clear the value.
+    std::string version = this->GeneratorToolsetVersion;
+    cmsys::RegularExpression regex("[0-9][0-9]\\.[0-9][0-9]");
+    if (regex.find(version)) {
+      version = "v" + version.erase(2, 1);
+    } else {
+      // Version not recognized. Clear it.
+      version.clear();
+    }
+
+    if (version.find(this->GetPlatformToolsetString()) != 0) {
+      std::ostringstream e;
+      /* clang-format off */
+      e <<
+        "Generator\n"
+        "  " << this->GetName() << "\n"
+        "given toolset and version specification\n"
+        "  " << this->GetPlatformToolsetString() << ",version=" <<
+        this->GeneratorToolsetVersion << "\n"
+        "contains an invalid version specification."
+      ;
+      /* clang-format on */
+      mf->IssueMessage(cmake::FATAL_ERROR, e.str());
+
+      // Clear the configured tool-set
+      this->GeneratorToolsetVersion.clear();
+    }
+
+    std::string const toolsetPath = this->GetAuxiliaryToolset();
+    if (!toolsetPath.empty() && !cmSystemTools::FileExists(toolsetPath)) {
+
+      std::ostringstream e;
+      /* clang-format off */
+      e <<
+        "Generator\n"
+        "  " << this->GetName() << "\n"
+        "given toolset and version specification\n"
+        "  " << this->GetPlatformToolsetString() << ",version=" <<
+        this->GeneratorToolsetVersion << "\n"
+        "does not seem to be installed at\n" <<
+        "  " << toolsetPath;
+      ;
+      /* clang-format on */
+      mf->IssueMessage(cmake::FATAL_ERROR, e.str());
+
+      // Clear the configured tool-set
+      this->GeneratorToolsetVersion.clear();
+    }
+  }
+
   if (const char* toolset = this->GetPlatformToolset()) {
     mf->AddDefinition("CMAKE_VS_PLATFORM_TOOLSET", toolset);
+  }
+  if (const char* version = this->GetPlatformToolsetVersion()) {
+    mf->AddDefinition("CMAKE_VS_PLATFORM_TOOLSET_VERSION", version);
   }
   if (const char* hostArch = this->GetPlatformToolsetHostArchitecture()) {
     mf->AddDefinition("CMAKE_VS_PLATFORM_TOOLSET_HOST_ARCHITECTURE", hostArch);
@@ -317,6 +374,10 @@ bool cmGlobalVisualStudio10Generator::ProcessGeneratorToolsetField(
 {
   if (key == "cuda") {
     this->GeneratorToolsetCuda = value;
+    return true;
+  }
+  if (key == "version") {
+    this->GeneratorToolsetVersion = value;
     return true;
   }
   return false;
@@ -512,6 +573,25 @@ std::string const& cmGlobalVisualStudio10Generator::GetPlatformToolsetString()
   return empty;
 }
 
+const char* cmGlobalVisualStudio10Generator::GetPlatformToolsetVersion() const
+{
+  std::string const& version = this->GetPlatformToolsetVersionString();
+  if (version.empty()) {
+    return nullptr;
+  }
+  return version.c_str();
+}
+
+std::string const&
+cmGlobalVisualStudio10Generator::GetPlatformToolsetVersionString() const
+{
+  if (!this->GeneratorToolsetVersion.empty()) {
+    return this->GeneratorToolsetVersion;
+  }
+  static std::string const empty;
+  return empty;
+}
+
 const char*
 cmGlobalVisualStudio10Generator::GetPlatformToolsetHostArchitecture() const
 {
@@ -533,6 +613,11 @@ std::string const&
 cmGlobalVisualStudio10Generator::GetPlatformToolsetCudaString() const
 {
   return this->GeneratorToolsetCuda;
+}
+
+std::string cmGlobalVisualStudio10Generator::GetAuxiliaryToolset() const
+{
+  return {};
 }
 
 bool cmGlobalVisualStudio10Generator::FindMakeProgram(cmMakefile* mf)
@@ -764,7 +849,7 @@ void cmGlobalVisualStudio10Generator::GenerateBuildCommand(
   std::vector<std::string>& makeCommand, const std::string& makeProgram,
   const std::string& projectName, const std::string& projectDir,
   const std::string& targetName, const std::string& config, bool fast,
-  bool verbose, std::vector<std::string> const& makeOptions)
+  int jobs, bool verbose, std::vector<std::string> const& makeOptions)
 {
   // Select the caller- or user-preferred make program, else MSBuild.
   std::string makeProgramSelected =
@@ -805,7 +890,7 @@ void cmGlobalVisualStudio10Generator::GenerateBuildCommand(
     // Use devenv to build solutions containing Intel Fortran projects.
     cmGlobalVisualStudio7Generator::GenerateBuildCommand(
       makeCommand, makeProgram, projectName, projectDir, targetName, config,
-      fast, verbose, makeOptions);
+      fast, jobs, verbose, makeOptions);
     return;
   }
 
@@ -813,6 +898,7 @@ void cmGlobalVisualStudio10Generator::GenerateBuildCommand(
 
   std::string realTarget = targetName;
   // msbuild.exe CxxOnly.sln /t:Build /p:Configuration=Debug /target:ALL_BUILD
+  //                         /m
   if (realTarget.empty()) {
     realTarget = "ALL_BUILD";
   }
@@ -841,6 +927,17 @@ void cmGlobalVisualStudio10Generator::GenerateBuildCommand(
   makeCommand.push_back(configArg);
   makeCommand.push_back(std::string("/p:VisualStudioVersion=") +
                         this->GetIDEVersion());
+
+  if (jobs != cmake::NO_BUILD_PARALLEL_LEVEL) {
+    if (jobs == cmake::DEFAULT_BUILD_PARALLEL_LEVEL) {
+      makeCommand.push_back("/m");
+    } else {
+      makeCommand.push_back(std::string("/m:") + std::to_string(jobs));
+    }
+    // Having msbuild.exe and cl.exe using multiple jobs is discouraged
+    makeCommand.push_back("/p:CL_MPCount=1");
+  }
+
   makeCommand.insert(makeCommand.end(), makeOptions.begin(),
                      makeOptions.end());
 }

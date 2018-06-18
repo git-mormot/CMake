@@ -82,6 +82,23 @@ cmMakefileTargetGenerator* cmMakefileTargetGenerator::New(
   return result;
 }
 
+void cmMakefileTargetGenerator::GetTargetLinkFlags(
+  std::string& flags, const std::string& linkLanguage)
+{
+  this->LocalGenerator->AppendFlags(
+    flags, this->GeneratorTarget->GetProperty("LINK_FLAGS"));
+
+  std::string linkFlagsConfig = "LINK_FLAGS_";
+  linkFlagsConfig += cmSystemTools::UpperCase(this->ConfigName);
+  this->LocalGenerator->AppendFlags(
+    flags, this->GeneratorTarget->GetProperty(linkFlagsConfig));
+
+  std::vector<std::string> opts;
+  this->GeneratorTarget->GetLinkOptions(opts, this->ConfigName, linkLanguage);
+  // LINK_OPTIONS are escaped.
+  this->LocalGenerator->AppendCompileOptions(flags, opts);
+}
+
 void cmMakefileTargetGenerator::CreateRuleFile()
 {
   // Create a directory for this target.
@@ -645,8 +662,9 @@ void cmMakefileTargetGenerator::WriteObjectBuildFile(
 
     // See if we need to use a compiler launcher like ccache or distcc
     std::string compilerLauncher;
-    if (!compileCommands.empty() && (lang == "C" || lang == "CXX" ||
-                                     lang == "Fortran" || lang == "CUDA")) {
+    if (!compileCommands.empty() &&
+        (lang == "C" || lang == "CXX" || lang == "Fortran" ||
+         lang == "CUDA")) {
       std::string const clauncher_prop = lang + "_COMPILER_LAUNCHER";
       const char* clauncher =
         this->GeneratorTarget->GetProperty(clauncher_prop);
@@ -1027,10 +1045,11 @@ void cmMakefileTargetGenerator::WriteTargetDependRules()
   // paths.  Make sure PWD is set to the original name of the home
   // output directory to help cmSystemTools to create the same
   // translation table for the dependency scanning process.
-  depCmd << "cd " << (this->LocalGenerator->ConvertToOutputFormat(
-                       cmSystemTools::CollapseFullPath(
-                         this->LocalGenerator->GetBinaryDirectory()),
-                       cmOutputConverter::SHELL))
+  depCmd << "cd "
+         << (this->LocalGenerator->ConvertToOutputFormat(
+              cmSystemTools::CollapseFullPath(
+                this->LocalGenerator->GetBinaryDirectory()),
+              cmOutputConverter::SHELL))
          << " && ";
 #endif
   // Generate a call this signature:
@@ -1402,7 +1421,7 @@ std::string cmMakefileTargetGenerator::GetLinkRule(
   const std::string& linkRuleVar)
 {
   std::string linkRule = this->Makefile->GetRequiredDefinition(linkRuleVar);
-  if (this->GeneratorTarget->HasImplibGNUtoMS()) {
+  if (this->GeneratorTarget->HasImplibGNUtoMS(this->ConfigName)) {
     std::string ruleVar = "CMAKE_";
     ruleVar += this->GeneratorTarget->GetLinkerLanguage(this->ConfigName);
     ruleVar += "_GNUtoMS_RULE";

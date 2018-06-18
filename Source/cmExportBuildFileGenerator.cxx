@@ -95,6 +95,9 @@ bool cmExportBuildFileGenerator::GenerateMainFile(std::ostream& os)
     this->PopulateInterfaceProperty("INTERFACE_COMPILE_FEATURES", gte,
                                     cmGeneratorExpression::BuildInterface,
                                     properties, missingTargets);
+    this->PopulateInterfaceProperty("INTERFACE_LINK_OPTIONS", gte,
+                                    cmGeneratorExpression::BuildInterface,
+                                    properties, missingTargets);
     this->PopulateInterfaceProperty("INTERFACE_POSITION_INDEPENDENT_CODE", gte,
                                     properties);
 
@@ -151,7 +154,7 @@ void cmExportBuildFileGenerator::GenerateImportTargetsConfig(
                                      target, properties, missingTargets);
       }
 
-      // TOOD: PUBLIC_HEADER_LOCATION
+      // TODO: PUBLIC_HEADER_LOCATION
       // This should wait until the build feature propagation stuff
       // is done.  Then this can be a propagated include directory.
       // this->GenerateImportProperty(config, te->HeaderGenerator,
@@ -224,13 +227,14 @@ void cmExportBuildFileGenerator::SetImportLocationProperty(
     }
 
     // Add the import library for windows DLLs.
-    if (target->HasImportLibrary() &&
+    if (target->HasImportLibrary(config) &&
         mf->GetDefinition("CMAKE_IMPORT_LIBRARY_SUFFIX")) {
       std::string prop = "IMPORTED_IMPLIB";
       prop += suffix;
       std::string value =
         target->GetFullPath(config, cmStateEnums::ImportLibraryArtifact);
-      target->GetImplibGNUtoMS(value, value, "${CMAKE_IMPORT_LIBRARY_SUFFIX}");
+      target->GetImplibGNUtoMS(config, value, value,
+                               "${CMAKE_IMPORT_LIBRARY_SUFFIX}");
       properties[prop] = value;
     }
   }

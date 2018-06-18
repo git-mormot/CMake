@@ -40,6 +40,7 @@ Properties of Global Scope
    /prop_gbl/JOB_POOLS
    /prop_gbl/PREDEFINED_TARGETS_FOLDER
    /prop_gbl/ECLIPSE_EXTRA_NATURES
+   /prop_gbl/ECLIPSE_EXTRA_CPROJECT_CONTENTS
    /prop_gbl/REPORT_UNDEFINED_PROPERTIES
    /prop_gbl/RULE_LAUNCH_COMPILE
    /prop_gbl/RULE_LAUNCH_CUSTOM
@@ -76,6 +77,7 @@ Properties on Directories
    /prop_dir/INTERPROCEDURAL_OPTIMIZATION
    /prop_dir/LABELS
    /prop_dir/LINK_DIRECTORIES
+   /prop_dir/LINK_OPTIONS
    /prop_dir/LISTFILE_STACK
    /prop_dir/MACROS
    /prop_dir/PARENT_DIRECTORY
@@ -143,6 +145,7 @@ Properties on Targets
    /prop_tgt/C_EXTENSIONS
    /prop_tgt/C_STANDARD
    /prop_tgt/C_STANDARD_REQUIRED
+   /prop_tgt/COMMON_LANGUAGE_RUNTIME
    /prop_tgt/COMPATIBLE_INTERFACE_BOOL
    /prop_tgt/COMPATIBLE_INTERFACE_NUMBER_MAX
    /prop_tgt/COMPATIBLE_INTERFACE_NUMBER_MIN
@@ -170,6 +173,7 @@ Properties on Targets
    /prop_tgt/DEBUG_POSTFIX
    /prop_tgt/DEFINE_SYMBOL
    /prop_tgt/DEPLOYMENT_REMOTE_DIRECTORY
+   /prop_tgt/DOTNET_TARGET_FRAMEWORK_VERSION
    /prop_tgt/EchoString
    /prop_tgt/ENABLE_EXPORTS
    /prop_tgt/EXCLUDE_FROM_ALL
@@ -186,6 +190,7 @@ Properties on Targets
    /prop_tgt/GNUtoMS
    /prop_tgt/HAS_CXX
    /prop_tgt/IMPLICIT_DEPENDS_INCLUDE_TRANSFORM
+   /prop_tgt/IMPORTED_COMMON_LANGUAGE_RUNTIME
    /prop_tgt/IMPORTED_CONFIGURATIONS
    /prop_tgt/IMPORTED_GLOBAL
    /prop_tgt/IMPORTED_IMPLIB_CONFIG
@@ -221,6 +226,7 @@ Properties on Targets
    /prop_tgt/INTERFACE_COMPILE_OPTIONS
    /prop_tgt/INTERFACE_INCLUDE_DIRECTORIES
    /prop_tgt/INTERFACE_LINK_LIBRARIES
+   /prop_tgt/INTERFACE_LINK_OPTIONS
    /prop_tgt/INTERFACE_POSITION_INDEPENDENT_CODE
    /prop_tgt/INTERFACE_SOURCES
    /prop_tgt/INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
@@ -250,6 +256,7 @@ Properties on Targets
    /prop_tgt/LINK_INTERFACE_MULTIPLICITY_CONFIG
    /prop_tgt/LINK_INTERFACE_MULTIPLICITY
    /prop_tgt/LINK_LIBRARIES
+   /prop_tgt/LINK_OPTIONS
    /prop_tgt/LINK_SEARCH_END_STATIC
    /prop_tgt/LINK_SEARCH_START_STATIC
    /prop_tgt/LINK_WHAT_YOU_USE
@@ -403,6 +410,7 @@ Properties on Source Files
    /prop_sf/VS_SHADER_ENTRYPOINT
    /prop_sf/VS_SHADER_FLAGS
    /prop_sf/VS_SHADER_MODEL
+   /prop_sf/VS_SHADER_OBJECT_FILE_NAME
    /prop_sf/VS_SHADER_OUTPUT_HEADER_FILE
    /prop_sf/VS_SHADER_TYPE
    /prop_sf/VS_SHADER_VARIABLE_NAME

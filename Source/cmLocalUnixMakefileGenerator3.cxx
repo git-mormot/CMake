@@ -35,8 +35,8 @@
 // C/C++ scanner is needed for bootstrapping CMake.
 #include "cmDependsC.h"
 #ifdef CMAKE_BUILD_WITH_CMAKE
-#include "cmDependsFortran.h"
-#include "cmDependsJava.h"
+#  include "cmDependsFortran.h"
+#  include "cmDependsJava.h"
 #endif
 
 // Escape special characters in Makefile dependency lines
@@ -763,6 +763,14 @@ void cmLocalUnixMakefileGenerator3::WriteSpecialTargetsBottom(
   if (!this->GlobalGenerator->GlobalSettingIsOn(
         "CMAKE_SUPPRESS_REGENERATION")) {
     // Build command to run CMake to check if anything needs regenerating.
+    std::vector<std::string> commands;
+    cmake* cm = this->GlobalGenerator->GetCMakeInstance();
+    if (cm->DoWriteGlobVerifyTarget()) {
+      std::string rescanRule = "$(CMAKE_COMMAND) -P ";
+      rescanRule += this->ConvertToOutputFormat(cm->GetGlobVerifyScript(),
+                                                cmOutputConverter::SHELL);
+      commands.push_back(rescanRule);
+    }
     std::string cmakefileName = cmake::GetCMakeFilesDirectoryPostSlash();
     cmakefileName += "Makefile.cmake";
     std::string runRule =
@@ -773,19 +781,19 @@ void cmLocalUnixMakefileGenerator3::WriteSpecialTargetsBottom(
     runRule += " 0";
 
     std::vector<std::string> no_depends;
-    std::vector<std::string> commands;
     commands.push_back(std::move(runRule));
     if (!this->IsRootMakefile()) {
       this->CreateCDCommand(commands, this->GetBinaryDirectory(),
                             this->GetCurrentBinaryDirectory());
     }
-    this->WriteMakeRule(
-      makefileStream, "Special rule to run CMake to check the build system "
-                      "integrity.\n"
-                      "No rule that depends on this can have "
-                      "commands that come from listfiles\n"
-                      "because they might be regenerated.",
-      "cmake_check_build_system", no_depends, commands, true);
+    this->WriteMakeRule(makefileStream,
+                        "Special rule to run CMake to check the build system "
+                        "integrity.\n"
+                        "No rule that depends on this can have "
+                        "commands that come from listfiles\n"
+                        "because they might be regenerated.",
+                        "cmake_check_build_system", no_depends, commands,
+                        true);
   }
 }
 
@@ -1514,9 +1522,10 @@ void cmLocalUnixMakefileGenerator3::WriteLocalAllRules(
       static_cast<cmGlobalUnixMakefileGenerator3*>(this->GlobalGenerator);
     if (gg->AllowNotParallel()) {
       std::vector<std::string> no_depends;
-      this->WriteMakeRule(ruleFileStream, "Allow only one \"make -f "
-                                          "Makefile2\" at a time, but pass "
-                                          "parallelism.",
+      this->WriteMakeRule(ruleFileStream,
+                          "Allow only one \"make -f "
+                          "Makefile2\" at a time, but pass "
+                          "parallelism.",
                           ".NOTPARALLEL", no_depends, no_commands, false);
     }
   }
@@ -1666,6 +1675,13 @@ void cmLocalUnixMakefileGenerator3::WriteLocalAllRules(
     // write the depend rule, really a recompute depends rule
     depends.clear();
     commands.clear();
+    cmake* cm = this->GlobalGenerator->GetCMakeInstance();
+    if (cm->DoWriteGlobVerifyTarget()) {
+      std::string rescanRule = "$(CMAKE_COMMAND) -P ";
+      rescanRule += this->ConvertToOutputFormat(cm->GetGlobVerifyScript(),
+                                                cmOutputConverter::SHELL);
+      commands.push_back(rescanRule);
+    }
     std::string cmakefileName = cmake::GetCMakeFilesDirectoryPostSlash();
     cmakefileName += "Makefile.cmake";
     {

@@ -266,10 +266,12 @@ static bool checkInterfaceDirs(const std::string& prepro,
               s << "Directory:\n    \"" << li
                 << "\"\nin "
                    "INTERFACE_INCLUDE_DIRECTORIES of target \""
-                << target->GetName() << "\" is a subdirectory of the install "
-                                        "directory:\n    \""
-                << installDir << "\"\nhowever it is also "
-                                 "a subdirectory of the "
+                << target->GetName()
+                << "\" is a subdirectory of the install "
+                   "directory:\n    \""
+                << installDir
+                << "\"\nhowever it is also "
+                   "a subdirectory of the "
                 << (inBinary ? "build" : "source") << " tree:\n    \""
                 << (inBinary ? topBinaryDir : topSourceDir) << "\""
                 << std::endl;
@@ -776,6 +778,25 @@ void cmExportFileGenerator::SetImportDetailProperties(
       m << iface->Multiplicity;
       properties[prop] = m.str();
     }
+  }
+
+  // Add information if this target is a managed target
+  if (target->GetManagedType(config) !=
+      cmGeneratorTarget::ManagedType::Native) {
+    std::string prop = "IMPORTED_COMMON_LANGUAGE_RUNTIME";
+    prop += suffix;
+    std::string propval;
+    if (auto* p = target->GetProperty("COMMON_LANGUAGE_RUNTIME")) {
+      propval = p;
+    } else if (target->HasLanguage("CSharp", config)) {
+      // C# projects do not have the /clr flag, so we set the property
+      // here to mark the target as (only) managed (i.e. no .lib file
+      // to link to). Otherwise the  COMMON_LANGUAGE_RUNTIME target
+      // property would have to be set manually for C# targets to make
+      // exporting/importing work.
+      propval = "CSharp";
+    }
+    properties[prop] = propval;
   }
 }
 
